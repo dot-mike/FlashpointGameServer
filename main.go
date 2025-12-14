@@ -501,6 +501,7 @@ XgVWIMrKj4T7p86bcxq4jdWDYUYpRd/2Og==
 				serverSettings.GameDataPath,
 				serverSettings.PhpCgiPath,
 				serverSettings.ExtMimeTypes,
+				serverSettings.ExtScriptTypes,
 				serverSettings.OverridePaths,
 				serverSettings.LegacyHTDOCSPath,
 			),

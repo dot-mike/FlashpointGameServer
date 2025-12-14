@@ -28,7 +28,8 @@
   "extScriptTypes": [
     "php",
     "php5",
-    "phtml"
+    "phtml",
+    "pl"
   ],
   "extIndexTypes": [
     "html",
