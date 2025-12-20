@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +24,8 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/elazarl/goproxy"
 )
+
+const htmlContent = `<html><body>Intentionally Empty File</body></html>`
 
 type ServerSettings struct {
 	RootPath             string            `json:"rootPath"`
@@ -49,6 +52,7 @@ type ServerSettings struct {
 	ExtIndexTypes        []string          `json:"extIndexTypes"`
 	ExtGzippeddTypes     []string          `json:"extGzippedTypes"`
 	ExtMimeTypes         map[string]string `json:"extMimeTypes"`
+	EnableHtaccess       bool              `json:"enableHtaccess"`
 }
 
 // ExtApplicationTypes is a map that holds the content types of different file extensions
@@ -96,6 +100,7 @@ func initServer() {
 	allowCrossDomain := flag.Bool("allowCrossDomain", serverSettings.AllowCrossDomain, "Whether to allow cross-domain requests")
 	verboseLogging := flag.Bool("verboseLogging", serverSettings.VerboseLogging, "should every proxy request be logged to stdout")
 	apiPrefix := flag.String("apiPrefix", serverSettings.ApiPrefix, "apiPrefix is used to prefix any API call.")
+	enableHtaccess := flag.Bool("enableHtaccess", serverSettings.EnableHtaccess, "Enables GameZIP games to follow basic htaccess rewrite files")
 
 	flag.Parse()
 
@@ -141,6 +146,7 @@ func initServer() {
 	serverSettings.AllowCrossDomain = *allowCrossDomain
 	serverSettings.VerboseLogging = *verboseLogging
 	serverSettings.ApiPrefix = *apiPrefix
+	serverSettings.EnableHtaccess = *enableHtaccess
 
 	// Print out all path settings
 	fmt.Println("Root Path:", serverSettings.RootPath)
@@ -149,6 +155,7 @@ func initServer() {
 	fmt.Println("Legacy CGI-BIN Path:", serverSettings.LegacyCGIBINPath)
 	fmt.Println("Legacy HTDOCS Path:", serverSettings.LegacyHTDOCSPath)
 	fmt.Println("PHP-CGI Path:", serverSettings.PhpCgiPath)
+	fmt.Println("Htaccess Enabled:", serverSettings.EnableHtaccess)
 
 	// Setup the proxy
 	proxy = goproxy.NewProxyHttpServer()
@@ -278,6 +285,18 @@ func getProxyResp(r *http.Request, contents []byte) (*http.Response, error) {
 		return proxyResp, nil
 	}
 
+	// Prevent htdocs loading
+	// Intercept if we're serving /content/www.mochiads.com/static/lib/services/services.swf and it's smaller than 10kb (probably parked page)
+	if r.URL.Host == "www.mochiads.com" && strings.HasPrefix(r.URL.Path, "/static/lib/services/services.swf") {
+		resRecorder := httptest.NewRecorder()
+		resRecorder.Header().Set("Content-Type", "text/html")
+		resRecorder.Header().Set("Content-Length", strconv.Itoa(len(htmlContent)))
+		resRecorder.Header().Set("ZIPSVR_FILENAME", "/empty.html")
+		resRecorder.WriteHeader(http.StatusOK)
+		resRecorder.Write([]byte(htmlContent))
+		return resRecorder.Result(), nil
+	}
+
 	// Check Legacy
 	if proxyResp.StatusCode >= 400 {
 		// Copy the original request
@@ -336,6 +355,7 @@ func handleRequest(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http
 	// Remove port from host if exists (old apps don't clean it before sending requests?)
 	r.URL.Host = strings.Split(r.URL.Host, ":")[0]
 	r.Header.Del("If-Modified-Since")
+
 	// Clone the body into both requests by reading and making 2 new readers
 	contents, _ := io.ReadAll(r.Body)
 
@@ -504,6 +524,7 @@ XgVWIMrKj4T7p86bcxq4jdWDYUYpRd/2Og==
 				serverSettings.ExtScriptTypes,
 				serverSettings.OverridePaths,
 				serverSettings.LegacyHTDOCSPath,
+				serverSettings.EnableHtaccess,
 			),
 		))
 	}()

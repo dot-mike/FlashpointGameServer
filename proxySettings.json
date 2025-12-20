@@ -15,6 +15,7 @@
   "enableHttpsProxy": false,
   "allowCrossDomain": true,
   "verboseLogging": false,
+  "enableHtaccess": false,
   "apiPrefix": "fpProxy/api/",
   "overridePaths": [
     "../Legacy/middleware_overrides/"
