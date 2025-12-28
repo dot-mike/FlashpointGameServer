@@ -47,6 +47,8 @@
     "svgz"
   ],
   "extMimeTypes": {
+    "3dm": "x-world/x-3dmf",
+    "3dmf": "x-world/x-3dmf",
     "aab": "application/x-authorware-bin",
     "aam": "application/x-authorware-map",
     "aas": "application/x-authorware-seg",
@@ -144,6 +146,8 @@
     "pwc": "application/x-pulse-player",
     "pwn": "application/x-pulse-download",
     "pws": "application/x-pulse-stream",
+    "qd3d": "x-world/x-3dmf",
+    "qd3": "x-world/x-3dmf",
     "qdgx": "image/x-qdgx",
     "rbs": "x-world/realibase",
     "rle": "image/rle",
